@@ -3,17 +3,16 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { QuestForm } from "@/components/quests/quest-form";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { questOpsAPI } from "@/services/api";
 import { UserRole } from "@/types";
 import { ShieldAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function CreateQuestPage() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -22,28 +21,17 @@ export default function CreateQuestPage() {
 
   const handleSubmit = async (values: { name: string; description?: string }) => {
     if (!isGuildCommander) {
-      toast({
-        title: "Unauthorized",
-        description: "Only guild commanders can create quests.",
-        variant: "destructive",
-      });
+      toast.error("Only guild commanders can create quests.");
       return;
     }
 
     try {
       setLoading(true);
       await questOpsAPI.addQuest(values);
-      toast({
-        title: "Success",
-        description: "Quest created successfully!",
-      });
+      toast.success("Quest created successfully!");
       router.push("/quests");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create quest. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to create quest. Please try again.");
       console.error("Error creating quest:", error);
     } finally {
       setLoading(false);

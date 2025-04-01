@@ -1,6 +1,6 @@
 import { BoardCheckingFilter, LoginCredentials, Quest, RegisterCredentials } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
 
 // Helper function for making fetch requests
 async function fetchAPI(endpoint: string, options: RequestInit = {}) {

@@ -1,7 +1,8 @@
 import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
-import { UserRole } from "@/types";
-import { BookOpen, MapIcon, ScrollText, Shield, Swords } from "lucide-react";
+// import { UserRole } from "@/types";
+import {  MapIcon, ScrollText, Shield, Swords } from "lucide-react";
+// import { BookOpen, MapIcon, ScrollText, Shield, Swords } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {

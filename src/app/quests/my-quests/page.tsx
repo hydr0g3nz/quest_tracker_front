@@ -6,17 +6,16 @@ import { QuestFilter } from "@/components/quests/quest-filter";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { crewSwitchboardAPI, questViewingAPI } from "@/services/api";
 import { BoardCheckingFilter, Quest, QuestStatus, UserRole } from "@/types";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function MyQuestsPage() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<BoardCheckingFilter>({});
@@ -55,11 +54,7 @@ export default function MyQuestsPage() {
       const data = await questViewingAPI.boardChecking(currentFilter);
       setQuests(data);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load quests. Please try again later.",
-        variant: "destructive",
-      });
+      toast.error("Failed to load quests. Please try again later.");
       console.error("Error fetching quests:", error);
     } finally {
       setLoading(false);
@@ -79,17 +74,10 @@ export default function MyQuestsPage() {
   const handleJoinQuest = async (questId: number) => {
     try {
       await crewSwitchboardAPI.joinQuest(questId);
-      toast({
-        title: "Success",
-        description: "You have joined the quest!",
-      });
+      toast.success("You have joined the quest!");
       fetchQuests(getFilterForTab(activeTab));
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to join quest. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to join quest. Please try again.");
       console.error("Error joining quest:", error);
     }
   };
@@ -97,17 +85,10 @@ export default function MyQuestsPage() {
   const handleLeaveQuest = async (questId: number) => {
     try {
       await crewSwitchboardAPI.leaveQuest(questId);
-      toast({
-        title: "Success",
-        description: "You have left the quest.",
-      });
+      toast.success("You have left the quest.");
       fetchQuests(getFilterForTab(activeTab));
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to leave quest. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to leave quest. Please try again.");
       console.error("Error leaving quest:", error);
     }
   };

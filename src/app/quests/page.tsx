@@ -6,14 +6,14 @@ import { QuestFilter } from "@/components/quests/quest-filter";
 import { crewSwitchboardAPI, questViewingAPI } from "@/services/api";
 import { BoardCheckingFilter, Quest } from "@/types";
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner"
+
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function QuestsPage() {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<BoardCheckingFilter>({});
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchQuests(filter);
@@ -25,11 +25,7 @@ export default function QuestsPage() {
       const data = await questViewingAPI.boardChecking(currentFilter);
       setQuests(data);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load quests. Please try again later.",
-        variant: "destructive",
-      });
+      toast.error("Failed to load quests. Please try again later.");
       console.error("Error fetching quests:", error);
     } finally {
       setLoading(false);
@@ -44,17 +40,10 @@ export default function QuestsPage() {
   const handleJoinQuest = async (questId: number) => {
     try {
       await crewSwitchboardAPI.joinQuest(questId);
-      toast({
-        title: "Success",
-        description: "You have joined the quest!",
-      });
+      toast.success("You have joined the quest!");
       fetchQuests(filter); // Refresh quests
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to join quest. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to join quest. Please try again.");
       console.error("Error joining quest:", error);
     }
   };
@@ -62,17 +51,10 @@ export default function QuestsPage() {
   const handleLeaveQuest = async (questId: number) => {
     try {
       await crewSwitchboardAPI.leaveQuest(questId);
-      toast({
-        title: "Success",
-        description: "You have left the quest.",
-      });
+      toast.success("You have left the quest.");
       fetchQuests(filter); // Refresh quests
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to leave quest. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to leave quest. Please try again.");
       console.error("Error leaving quest:", error);
     }
   };
