@@ -1,3 +1,4 @@
+"use client";
 import { useAuth } from "@/contexts/auth-context";
 import { UserRole } from "@/types";
 import { Button } from "@/components/ui/button";

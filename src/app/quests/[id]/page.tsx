@@ -4,22 +4,22 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { crewSwitchboardAPI, journeyLedgerAPI, questOpsAPI, questViewingAPI } from "@/services/api";
 import { Quest, QuestStatus, UserRole } from "@/types";
 import { format } from "date-fns";
 import { CalendarDays, Clock, MapPin, Shield, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import React,{ useEffect, useState } from "react";
+import { toast } from "sonner";
 
-export default function QuestDetailPage({ params }: { params: { id: string } }) {
-  const questId = parseInt(params.id);
+export default function QuestDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const unwrappedParams = React.use(params);
+  const questId = parseInt(unwrappedParams.id);
   const [quest, setQuest] = useState<Quest | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const { user } = useAuth();
-  const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
@@ -32,11 +32,7 @@ export default function QuestDetailPage({ params }: { params: { id: string } }) 
       const data = await questViewingAPI.viewQuestDetails(questId);
       setQuest(data);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load quest details. Please try again later.",
-        variant: "destructive",
-      });
+      toast.error("Failed to load quest details. Please try again later.");
       console.error("Error fetching quest details:", error);
     } finally {
       setLoading(false);
@@ -47,17 +43,10 @@ export default function QuestDetailPage({ params }: { params: { id: string } }) 
     try {
       setActionLoading(true);
       await crewSwitchboardAPI.joinQuest(questId);
-      toast({
-        title: "Success",
-        description: "You have joined the quest!",
-      });
+      toast.success("You have joined the quest!");
       fetchQuestDetails();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to join quest. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to join quest. Please try again.");
       console.error("Error joining quest:", error);
     } finally {
       setActionLoading(false);
@@ -68,17 +57,10 @@ export default function QuestDetailPage({ params }: { params: { id: string } }) 
     try {
       setActionLoading(true);
       await crewSwitchboardAPI.leaveQuest(questId);
-      toast({
-        title: "Success",
-        description: "You have left the quest.",
-      });
+      toast.success("You have left the quest.");
       fetchQuestDetails();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to leave quest. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to leave quest. Please try again.");
       console.error("Error leaving quest:", error);
     } finally {
       setActionLoading(false);
@@ -91,17 +73,10 @@ export default function QuestDetailPage({ params }: { params: { id: string } }) 
     try {
       setActionLoading(true);
       await questOpsAPI.removeQuest(questId);
-      toast({
-        title: "Success",
-        description: "Quest deleted successfully.",
-      });
+      toast.success("Quest deleted successfully.");
       router.push("/quests");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete quest. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete quest. Please try again.");
       console.error("Error deleting quest:", error);
     } finally {
       setActionLoading(false);
@@ -112,17 +87,10 @@ export default function QuestDetailPage({ params }: { params: { id: string } }) 
     try {
       setActionLoading(true);
       await journeyLedgerAPI.inJourney(questId);
-      toast({
-        title: "Success",
-        description: "The journey has begun!",
-      });
+      toast.success("The journey has begun!");
       fetchQuestDetails();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to start journey. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to start journey. Please try again.");
       console.error("Error starting journey:", error);
     } finally {
       setActionLoading(false);
@@ -133,17 +101,10 @@ export default function QuestDetailPage({ params }: { params: { id: string } }) 
     try {
       setActionLoading(true);
       await journeyLedgerAPI.toCompleted(questId);
-      toast({
-        title: "Success",
-        description: "Quest completed successfully!",
-      });
+      toast.success("Quest completed successfully!");
       fetchQuestDetails();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to complete quest. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to complete quest. Please try again.");
       console.error("Error completing quest:", error);
     } finally {
       setActionLoading(false);
@@ -154,17 +115,10 @@ export default function QuestDetailPage({ params }: { params: { id: string } }) 
     try {
       setActionLoading(true);
       await journeyLedgerAPI.toFailed(questId);
-      toast({
-        title: "Notice",
-        description: "Quest has been marked as failed.",
-      });
+      toast("Quest has been marked as failed.");
       fetchQuestDetails();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update quest status. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to update quest status. Please try again.");
       console.error("Error failing quest:", error);
     } finally {
       setActionLoading(false);

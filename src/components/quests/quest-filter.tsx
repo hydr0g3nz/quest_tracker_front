@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Search, X } from "lucide-react";
 import { useState } from "react";
+import { SelectLabel } from "@radix-ui/react-select";
 
 interface QuestFilterProps {
   onFilterChange: (filter: BoardCheckingFilter) => void;
@@ -64,7 +65,7 @@ export function QuestFilter({ onFilterChange, initialFilter }: QuestFilterProps)
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectLabel>All Statuses</SelectLabel>
               <SelectItem value={QuestStatus.Open}>Open</SelectItem>
               <SelectItem value={QuestStatus.InJourney}>In Journey</SelectItem>
               <SelectItem value={QuestStatus.Completed}>Completed</SelectItem>
