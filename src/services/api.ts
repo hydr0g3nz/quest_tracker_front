@@ -8,6 +8,7 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   const response = await fetch(url, {
     ...options,
     credentials: "include", // Include cookies in the request
+    
     headers: {
       "Content-Type": "application/json",
       ...options.headers,
