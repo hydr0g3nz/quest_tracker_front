@@ -67,7 +67,7 @@ export const authAPI = {
 
 // Quest Operations for Guild Commanders
 export const questOpsAPI = {
-  addQuest: (data: { name: string; description?: string }) =>
+  addQuest: (data: { name: string; description?: string;guild_commander_id :number }) =>
     fetchAPI("/quest-ops", {
       method: "POST",
       body: JSON.stringify(data),

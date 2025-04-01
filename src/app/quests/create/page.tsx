@@ -19,7 +19,7 @@ export default function CreateQuestPage() {
   // Check if user is authorized (guild commander)
   const isGuildCommander = user?.role === UserRole.GuildCommander;
 
-  const handleSubmit = async (values: { name: string; description?: string }) => {
+  const handleSubmit = async (values: { name: string; description?: string; }) => {
     if (!isGuildCommander) {
       toast.error("Only guild commanders can create quests.");
       return;
@@ -27,7 +27,7 @@ export default function CreateQuestPage() {
 
     try {
       setLoading(true);
-      await questOpsAPI.addQuest(values);
+      await questOpsAPI.addQuest({...values, guild_commander_id: user.id});
       toast.success("Quest created successfully!");
       router.push("/quests");
     } catch (error) {
