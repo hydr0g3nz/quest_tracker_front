@@ -9,8 +9,10 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner"
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function QuestsPage() {
+  const { user } = useAuth();
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<BoardCheckingFilter>({});

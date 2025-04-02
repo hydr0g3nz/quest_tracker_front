@@ -4,26 +4,30 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { crewSwitchboardAPI, journeyLedgerAPI, questOpsAPI, questViewingAPI } from "@/services/api";
-import { Quest, QuestStatus, UserRole } from "@/types";
+import { AdventurerViewModel, Quest, QuestStatus, UserRole } from "@/types";
 import { format } from "date-fns";
 import { CalendarDays, Clock, MapPin, Shield, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React,{ useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function QuestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = React.use(params);
   const questId = parseInt(unwrappedParams.id);
   const [quest, setQuest] = useState<Quest | null>(null);
+  const [adventurers, setAdventurers] = useState<AdventurerViewModel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [adventurersLoading, setAdventurersLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     fetchQuestDetails();
+    fetchQuestAdventurers();
   }, [questId]);
 
   const fetchQuestDetails = async () => {
@@ -39,12 +43,26 @@ export default function QuestDetailPage({ params }: { params: Promise<{ id: stri
     }
   };
 
+  const fetchQuestAdventurers = async () => {
+    try {
+      setAdventurersLoading(true);
+      const data = await questViewingAPI.questAdventurers(questId);
+      setAdventurers(data);
+    } catch (error) {
+      toast.error("Failed to load quest adventurers. Please try again later.");
+      console.error("Error fetching quest adventurers:", error);
+    } finally {
+      setAdventurersLoading(false);
+    }
+  };
+
   const handleJoinQuest = async () => {
     try {
       setActionLoading(true);
       await crewSwitchboardAPI.joinQuest(questId);
       toast.success("You have joined the quest!");
       fetchQuestDetails();
+      fetchQuestAdventurers();
     } catch (error) {
       toast.error("Failed to join quest. Please try again.");
       console.error("Error joining quest:", error);
@@ -59,6 +77,7 @@ export default function QuestDetailPage({ params }: { params: Promise<{ id: stri
       await crewSwitchboardAPI.leaveQuest(questId);
       toast.success("You have left the quest.");
       fetchQuestDetails();
+      fetchQuestAdventurers();
     } catch (error) {
       toast.error("Failed to leave quest. Please try again.");
       console.error("Error leaving quest:", error);
@@ -142,18 +161,23 @@ export default function QuestDetailPage({ params }: { params: Promise<{ id: stri
 
   const isAdventurer = user?.role === UserRole.Adventurer;
   const isGuildCommander = user?.role === UserRole.GuildCommander;
+  
+  // Check if current user is already in this quest
+  const isUserInQuest = user && isAdventurer && adventurers.some(adv => adv.id === user.id);
 
   // Determine which actions are available based on user role and quest status
   const canJoin =
     isAdventurer &&
     quest &&
     (quest.status === QuestStatus.Open || quest.status === QuestStatus.Failed) &&
-    quest.adventurers_count < 4;
+    quest.adventurers_count < 4 && 
+    !isUserInQuest;
 
   const canLeave =
     isAdventurer &&
     quest &&
-    (quest.status === QuestStatus.Open || quest.status === QuestStatus.Failed);
+    (quest.status === QuestStatus.Open || quest.status === QuestStatus.Failed) &&
+    isUserInQuest;
 
   const canDelete =
     isGuildCommander &&
@@ -275,6 +299,38 @@ export default function QuestDetailPage({ params }: { params: Promise<{ id: stri
             </CardContent>
           </Card>
         </div>
+        
+        {/* Adventurers List */}
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="text-xl font-medium mb-4">Adventurers Crew</h3>
+            {adventurersLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : adventurers.length === 0 ? (
+              <p className="text-muted-foreground">No adventurers have joined this quest yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {adventurers.map((adventurer) => (
+                  <div key={adventurer.id} className="flex items-center p-2 rounded-md bg-secondary/50">
+                    <Avatar className="h-8 w-8 mr-3">
+                      <AvatarFallback>{adventurer.username.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{adventurer.username}</p>
+                      <p className="text-xs text-muted-foreground">Adventurer ID: {adventurer.id}</p>
+                    </div>
+                    {user && user.id === adventurer.id && (
+                      <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">You</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Actions */}
         <div className="flex flex-wrap gap-4 pt-4">

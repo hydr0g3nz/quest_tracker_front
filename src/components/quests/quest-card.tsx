@@ -10,20 +10,50 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { questViewingAPI } from "@/services/api";
 import { format } from "date-fns";
 import { ChevronRight, Users } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface QuestCardProps {
   quest: Quest;
   onJoin?: (questId: number) => void;
   onLeave?: (questId: number) => void;
+  isUserQuest?: boolean;
 }
 
-export function QuestCard({ quest, onJoin, onLeave }: QuestCardProps) {
+export function QuestCard({ quest, onJoin, onLeave, isUserQuest = false }: QuestCardProps) {
   const { user } = useAuth();
+  const [isUserInQuest, setIsUserInQuest] = useState<boolean>(false);
+  const [checkingStatus, setCheckingStatus] = useState<boolean>(false);
+
   const isGuildCommander = user?.role === UserRole.GuildCommander;
   const isAdventurer = user?.role === UserRole.Adventurer;
+
+  // Check if current user is an adventurer in this quest
+  useEffect(() => {
+    if (user && isAdventurer && !isUserQuest) {
+      checkIfUserInQuest();
+    } else if (isUserQuest) {
+      // If we're in "My Quests" view, we know the user is already in this quest
+      setIsUserInQuest(true);
+    }
+  }, [quest.id, user, isUserQuest]);
+
+  const checkIfUserInQuest = async () => {
+    if (!user) return;
+    
+    try {
+      setCheckingStatus(true);
+      const adventurers = await questViewingAPI.questAdventurers(quest.id);
+      setIsUserInQuest(adventurers.some(adv => adv.id === user.id));
+    } catch (error) {
+      console.error(`Error checking adventurers for quest ${quest.id}:`, error);
+    } finally {
+      setCheckingStatus(false);
+    }
+  };
 
   const statusColors: Record<QuestStatus, string> = {
     [QuestStatus.Open]: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
@@ -34,10 +64,13 @@ export function QuestCard({ quest, onJoin, onLeave }: QuestCardProps) {
 
   const canJoin = isAdventurer && 
                  (quest.status === QuestStatus.Open || quest.status === QuestStatus.Failed) && 
-                 quest.adventurers_count < 4;
+                 quest.adventurers_count < 4 &&
+                 !isUserInQuest &&
+                 !checkingStatus;
 
   const canLeave = isAdventurer && 
-                  (quest.status === QuestStatus.Open || quest.status === QuestStatus.Failed);
+                  (quest.status === QuestStatus.Open || quest.status === QuestStatus.Failed) &&
+                  isUserInQuest;
 
   const handleJoin = () => {
     if (onJoin) {
@@ -68,11 +101,18 @@ export function QuestCard({ quest, onJoin, onLeave }: QuestCardProps) {
       </CardHeader>
       <CardContent>
         <p className="text-sm">{quest.description || "No description provided."}</p>
-        <div className="flex items-center text-muted-foreground mt-4">
-          <Users className="h-4 w-4 mr-1" />
-          <span className="text-xs">
-            {quest.adventurers_count}/4 Adventurers
-          </span>
+        <div className="flex items-center justify-between text-muted-foreground mt-4">
+          <div className="flex items-center">
+            <Users className="h-4 w-4 mr-1" />
+            <span className="text-xs">
+              {quest.adventurers_count}/4 Adventurers
+            </span>
+          </div>
+          {isUserInQuest && (
+            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+              Joined
+            </span>
+          )}
         </div>
       </CardContent>
       <CardFooter className="flex justify-between pt-3">

@@ -21,15 +21,19 @@ export interface Quest {
   updated_at: string;
 }
 
+export interface AdventurerViewModel {
+  id: number;
+  username: string;
+}
+
 export interface LoginCredentials {
   username: string;
   password: string;
 }
 
 export interface RegisterCredentials extends LoginCredentials {
-  // Add any additional registration fields if needed
+  // Any additional registration fields if needed
   name: string;
-  email: string;
 }
 
 export interface Passport {

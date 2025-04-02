@@ -1,4 +1,4 @@
-import { BoardCheckingFilter, LoginCredentials, Quest, RegisterCredentials } from "@/types";
+import { AdventurerViewModel, BoardCheckingFilter, LoginCredentials, Quest, RegisterCredentials } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090";
 
@@ -98,6 +98,10 @@ export const questViewingAPI = {
     
     return fetchAPI(`/quest-viewing/board-checking?${params.toString()}`);
   },
+
+  // New API method to get adventurers for a specific quest
+  questAdventurers: (questId: number): Promise<AdventurerViewModel[]> =>
+    fetchAPI(`/quest-viewing/${questId}/adventurers`),
 };
 
 // Crew Switchboard for Adventurers

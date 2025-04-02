@@ -17,15 +17,27 @@ import { toast } from "sonner";
 export default function MyQuestsPage() {
   const { user } = useAuth();
   const [quests, setQuests] = useState<Quest[]>([]);
+  const [userQuests, setUserQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userQuestsLoading, setUserQuestsLoading] = useState(true);
   const [filter, setFilter] = useState<BoardCheckingFilter>({});
   const [activeTab, setActiveTab] = useState<string>("active");
 
   const isGuildCommander = user?.role === UserRole.GuildCommander;
 
   useEffect(() => {
-    fetchQuests(getFilterForTab(activeTab));
-  }, [activeTab]);
+    if (user) {
+      if (isGuildCommander) {
+        // For guild commanders, get quests they created
+        fetchQuests(getFilterForTab(activeTab));
+      } else {
+        // For adventurers, fetch all quests first to apply filters
+        fetchQuests(getFilterForTab(activeTab));
+        // Then fetch quests the user has joined
+        fetchUserQuests();
+      }
+    }
+  }, [activeTab, user]);
 
   const getFilterForTab = (tab: string): BoardCheckingFilter => {
     let statusFilter: QuestStatus | undefined;
@@ -49,15 +61,55 @@ export default function MyQuestsPage() {
   const fetchQuests = async (currentFilter: BoardCheckingFilter) => {
     try {
       setLoading(true);
-      // In a real app, we would have an API endpoint to fetch quests for the logged-in user
-      // For now, we'll just fetch all quests with the filter
       const data = await questViewingAPI.boardChecking(currentFilter);
-      setQuests(data);
+      
+      // If a guild commander, set all quests
+      if (isGuildCommander) {
+        const guildCommanderQuests = data.filter(
+          (quest) => quest.guild_commander_id === user?.id
+        );
+        setQuests(guildCommanderQuests);
+      } else {
+        setQuests(data);
+      }
     } catch (error) {
       toast.error("Failed to load quests. Please try again later.");
       console.error("Error fetching quests:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch user's joined quests by checking adventurers in each quest
+  const fetchUserQuests = async () => {
+    if (!user || user.role !== UserRole.Adventurer) return;
+    
+    try {
+      setUserQuestsLoading(true);
+      
+      const userJoinedQuests: Quest[] = [];
+      
+      // Get all quests first
+      const allQuests = await questViewingAPI.boardChecking({});
+      
+      // Check each quest to see if user is an adventurer
+      for (const quest of allQuests) {
+        try {
+          const adventurers = await questViewingAPI.questAdventurers(quest.id);
+          if (adventurers.some(adv => adv.id === user.id)) {
+            userJoinedQuests.push(quest);
+          }
+        } catch (error) {
+          console.error(`Error checking adventurers for quest ${quest.id}:`, error);
+        }
+      }
+      
+      setUserQuests(userJoinedQuests);
+    } catch (error) {
+      toast.error("Failed to load your quests. Please try again later.");
+      console.error("Error fetching user quests:", error);
+    } finally {
+      setUserQuestsLoading(false);
     }
   };
 
@@ -76,6 +128,7 @@ export default function MyQuestsPage() {
       await crewSwitchboardAPI.joinQuest(questId);
       toast.success("You have joined the quest!");
       fetchQuests(getFilterForTab(activeTab));
+      fetchUserQuests();
     } catch (error) {
       toast.error("Failed to join quest. Please try again.");
       console.error("Error joining quest:", error);
@@ -87,6 +140,7 @@ export default function MyQuestsPage() {
       await crewSwitchboardAPI.leaveQuest(questId);
       toast.success("You have left the quest.");
       fetchQuests(getFilterForTab(activeTab));
+      fetchUserQuests();
     } catch (error) {
       toast.error("Failed to leave quest. Please try again.");
       console.error("Error leaving quest:", error);
@@ -155,7 +209,14 @@ export default function MyQuestsPage() {
   );
 
   function renderQuestsList(status: string) {
-    if (loading) {
+    // Determine which quests to display based on user role
+    const questsToDisplay = isGuildCommander 
+      ? quests.filter(q => q.status === status)  // Guild commanders see quests they created
+      : userQuests.filter(q => q.status === status);  // Adventurers see quests they joined
+    
+    const isLoading = isGuildCommander ? loading : userQuestsLoading;
+
+    if (isLoading) {
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(3)].map((_, i) => (
@@ -171,15 +232,15 @@ export default function MyQuestsPage() {
       );
     }
 
-    const filteredQuests = quests.filter((quest) => quest.status === status);
-
-    if (filteredQuests.length === 0) {
+    if (questsToDisplay.length === 0) {
       return (
         <div className="text-center py-12">
           <h3 className="text-xl font-medium">No {status.toLowerCase()} quests found</h3>
           <p className="text-muted-foreground mt-2">
             {status === "Open"
-              ? "Join some quests or check back later for new opportunities"
+              ? isGuildCommander
+                ? "Create some quests or check back later"
+                : "Join some quests or check back later for new opportunities"
               : status === "InJourney"
               ? "No quests are currently in progress"
               : status === "Completed"
@@ -192,12 +253,13 @@ export default function MyQuestsPage() {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredQuests.map((quest) => (
+        {questsToDisplay.map((quest) => (
           <QuestCard
             key={quest.id}
             quest={quest}
             onJoin={handleJoinQuest}
             onLeave={handleLeaveQuest}
+            isUserQuest={true} // Since these are user's quests, mark them as such
           />
         ))}
       </div>
