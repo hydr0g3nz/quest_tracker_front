@@ -27,13 +27,11 @@ export default function CreateQuestPage() {
 
     try {
       setLoading(true);
-      alert(`Creating quest with values: ${user.id}`);
       await questOpsAPI.addQuest({...values, guild_commander_id: user.id});
       toast.success("Quest created successfully!");
       router.push("/quests");
     } catch (error) {
       toast.error("Failed to create quest. Please try again.");
-      console.error("Error creating quest:", error);
     } finally {
       setLoading(false);
     }

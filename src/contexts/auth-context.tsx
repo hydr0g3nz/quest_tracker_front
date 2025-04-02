@@ -11,13 +11,10 @@ function decodeJwtToken(token: string) {
     const payload = token.split('.')[1];
     // Decode the base64 payload
     const decodedPayload = JSON.parse(atob(payload));
-    console.log("Decoded JWT Payload:", decodedPayload);
     // Extract user ID from the payload (usually stored as 'sub' or 'id')
     const userId = decodedPayload.sub || decodedPayload.id || 0;
-    console.log("parsed userId:", parseInt(userId, 10));
     return parseInt(userId, 10);
   } catch (error) {
-    console.error("Error decoding JWT:", error);
     return 0;
   }
 }
@@ -26,7 +23,6 @@ function decodeJwtToken(token: string) {
 function getJwtFromCookie() {
   // Access token is stored in a cookie named 'act'
   const cookies = document.cookie.split(';');
-  console.log("Cookies:", cookies);
   const actCookie = cookies.find(cookie => cookie.trim().startsWith('act='));
   if (actCookie) {
     return actCookie.trim().substring(4); // Remove 'act=' prefix
@@ -54,7 +50,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Extract user ID from JWT token
   const getUserIdFromToken = () => {
     const token = getJwtFromCookie();
-    console.log("JWT Token:", token);
     if (token) {
       return decodeJwtToken(token);
     }
@@ -70,7 +65,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await authAPI.adventurerRefreshToken();
           // If successful, user is an adventurer
           const userId = getUserIdFromToken();
-          console.log("User ID from token:", userId);
           setUser({ id: userId, role: UserRole.Adventurer });
         } catch {
           try {
@@ -84,7 +78,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (error) {
-        console.error("Auth check failed:", error);
         setUser(null);
       } finally {
         setLoading(false);
